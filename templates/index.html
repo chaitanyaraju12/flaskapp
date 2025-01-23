@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Processing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            background: linear-gradient(135deg, #05fa4f 0%, #2575fc 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 40px;
+            border-radius: 15px;
+            width: 50%;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            color: #fff;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        label {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        label:hover {
+            background-color: #1e7e34;
+        }
+        #output img {
+            max-width: 100%;
+            border: 1px solid white;
+            border-radius: 10px;
+            margin-top: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .loading {
+            font-size: 16px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        @media (max-width: 768px) {
+            .container {
+                width: 80%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Go For Segregation</h1>
+        <p>Upload an image for processing:</p>
+        <input type="file" id="imageInput" accept="image/*">
+        <label for="imageInput">Choose File</label>
+        <br><br>
+        <button id="processButton">Process Image</button>
+        <div id="output">
+            <p id="statusMessage"></p>
+            <img id="outputImage" src="" alt="Processed Output" style="display: none;">
+            <p id="loadingMessage" class="loading" style="display: none;">Processing... Please wait.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('processButton').addEventListener('click', async () => {
+            const imageInput = document.getElementById('imageInput');
+            const output = document.getElementById('output');
+            const outputImage = document.getElementById('outputImage');
+            const statusMessage = document.getElementById('statusMessage');
+            const loadingMessage = document.getElementById('loadingMessage');
+
+            // Clear previous output
+            statusMessage.textContent = '';
+            outputImage.style.display = 'none';
+
+            // Validate input
+            if (!imageInput.files || imageInput.files.length === 0) {
+                statusMessage.textContent = 'Please upload an image first.';
+                return;
+            }
+
+            const file = imageInput.files[0];
+            if (!file.type.startsWith('image/')) {
+                statusMessage.textContent = 'Invalid file type. Please upload an image.';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            // Show loading message
+            loadingMessage.style.display = 'block';
+
+            try {
+                // Send the image to the backend for processing
+                const response = await fetch('http://127.0.0.1:5000/process-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to process the image.');
+                }
+
+                const result = await response.json();
+                loadingMessage.style.display = 'none';
+
+                if (result.imageUrl) {
+                    outputImage.src = result.imageUrl;
+                    outputImage.style.display = 'block';
+                    statusMessage.textContent = result.message || 'Image processed successfully!';
+                } else {
+                    statusMessage.textContent = 'Processing completed, but no image output generated.';
+                }
+            } catch (error) {
+                loadingMessage.style.display = 'none';
+                statusMessage.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
